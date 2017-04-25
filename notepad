@@ -1,0 +1,122 @@
+#!/bin/bash
+
+#notes will be kept in directory ./notes
+
+function checkNotesDir() {
+	if [ -d "./notes" ]; then
+		echo "Directory 'notes' already exists... Gut gut...";
+	else
+		mkdir "notes";
+		if [ ! -d "./notes" ]; then
+			echo "Tried to create 'notes' dir, but unsuccessfully... Exiting...";
+			exit;
+		elif [ ! -w "./notes" ]; then
+			echo "Created directory 'notes', but it has no write permission... Exiting...";
+			exit;
+		else
+			echo "Dir 'notes' has been created and it has write permission!";
+		fi;
+	fi;
+	echo
+}
+
+function listNotes() {
+	echo "You have already `ls ./notes | wc -l` notes in your notebook. Lets list them: "
+	if [ `ls -l "./notes" | tail -n +2 | wc -l` -eq 0 ]; then
+		echo "You dont have any notes!"
+		echo
+	else
+		counter=1
+		ls -l "./notes" | tail -n +2 | tr -s " " " " | cut -f 6,7,8,9,10 -d " " | 
+			while read a; do
+				echo "_______________________________________"
+				echo "($counter)"
+				counter=$[$counter+1]
+				fname=`echo $a | cut -f 4 -d ' '`
+				echo "File name: $fname"
+				echo "Date: `echo $a | cut -f 1,2,3 -d ' '`"
+			done;
+	fi
+	echo
+}
+
+function fileNotExists() {
+	echo "Such file does not exist!"
+}
+
+function newFile() {
+    if [ -f "./notes/$1" ] || [ -d "./notes/$1" ]; then
+	echo "Such file (or dir) already exists!"
+    else
+	touch "./notes/$1"
+	echo "Created new note: $1"
+    fi
+}
+
+function delFile() {
+    if [ -f "./notes/$1" ]; then
+	rm "./notes/$1"
+	echo "Removed note: $1"
+    else
+	fileNotExists
+    fi
+}
+
+function editFile() {
+	if [ ! -f "./notes/$fname" ]; then
+		fileNotExists
+	else
+		nano $fname
+	fi
+}
+
+function findFile() {
+	local search=`ls "./notes" | grep $1`
+	echo $search
+	if [[ -z $search ]]; then
+		echo "No results..."
+	else
+		echo "Found!"
+		echo $search
+	fi
+}
+
+function getCommand() {
+	echo -n "notepad> "
+	read a;
+	cmd=`echo $a | cut -f 1 -d ' '`
+	fname=`echo $a | cut -f 2 -d ' '`
+	case $cmd in
+		"new")
+			newFile $fname
+		;;
+		"del"|"rm")
+			delFile $fname
+		;;
+		"edit")
+			editFile $fname
+		;;
+		"show")
+			cat $fname
+		;;
+		"find")
+			findFile $fname
+		;;
+		"exit"|"quit")
+			echo "Bye bye!"
+			exit
+		;;
+		"list")
+			listNotes
+		;;
+		*)
+			echo "Unknown command :("
+		;;
+	esac
+}
+
+checkNotesDir
+listNotes
+while [ 1=1 ]; do
+	getCommand
+done;
